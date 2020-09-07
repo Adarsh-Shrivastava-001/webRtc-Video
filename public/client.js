@@ -9,7 +9,7 @@ var remoteVideo = document.getElementById("remoteVideo");
 // variables
 var roomNumber;
 var localStream;
-var remoteStream;
+var shareStream;
 var rtcPeerConnection;
 var iceServers = {
     'iceServers': [

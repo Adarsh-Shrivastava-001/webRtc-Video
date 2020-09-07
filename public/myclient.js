@@ -53,6 +53,7 @@ socket.on('created', (room)=>{
         nodeId = 1;
         localStream = stream;
         localVideo.srcObject = stream;
+        console.log('stream', stream.getTracks())
     })
     .catch((err)=>{
         console.log("error while geting stream ", err);
@@ -68,6 +69,7 @@ socket.on('joined', (obj)=>{
         localStream = stream;
         nodeId = srcid;
         localVideo.srcObject = stream;
+        console.log('stream', stream.getTracks())
         console.log('emitting ready for room ', room, 'from node', srcid);
         socket.emit('ready', {'room':room, 'srcid':nodeId});
     })
@@ -108,6 +110,7 @@ socket.on('ready', (obj)=>{
         };
         rtcPeerConnectionList[srcid].addTrack(localStream.getTracks()[0], localStream);
         rtcPeerConnectionList[srcid].addTrack(localStream.getTracks()[1], localStream);
+        console.log(localStream.getTracks())
         rtcPeerConnectionList[srcid].createOffer()
         .then((sdp)=>{
             rtcPeerConnectionList[srcid].setLocalDescription(sdp);
@@ -160,6 +163,7 @@ socket.on('offer', (obj)=>{
 
         rtcPeerConnectionList[srcid].addTrack(localStream.getTracks()[0], localStream);
         rtcPeerConnectionList[srcid].addTrack(localStream.getTracks()[1], localStream);
+        console.log(localStream.getTracks())
         rtcPeerConnectionList[srcid].setRemoteDescription(new RTCSessionDescription(remote_sdp));
         rtcPeerConnectionList[srcid].createAnswer()
         .then((sdp)=>{
@@ -211,4 +215,74 @@ socket.on('candidate', function (obj) {
     }
     
 });
+
+
+var url = 'https://raw.githubusercontent.com/mozilla/pdf.js/ba2edeae/examples/learning/helloworld.pdf';
+
+// Loaded via <script> tag, create shortcut to access PDF.js exports.
+var pdfjsLib = window['pdfjs-dist/build/pdf'];
+
+// The workerSrc property shall be specified.
+pdfjsLib.GlobalWorkerOptions.workerSrc = '//mozilla.github.io/pdf.js/build/pdf.worker.js';
+
+
+
+var pdf_aval = false;
+var pdf_pg_no = 1;
+var canvas = document.getElementById('the-canvas');
+var pdf_obj;
+
+
+
+var render_pdf_page = (pdf, pg_no)=>{
+    pdf.getPage(pg_no).then(function(page) {
+        console.log('Page loaded');
+        
+        var scale = 0.3;
+        var viewport = page.getViewport({scale: scale});
+
+        // Prepare canvas using PDF page dimensions
+        var canvas = document.getElementById('the-canvas');
+        var context = canvas.getContext('2d');
+        canvas.height = viewport.height;
+        canvas.width = viewport.width;
+
+        // Render PDF page into canvas context
+        var renderContext = {
+        canvasContext: context,
+        viewport: viewport
+        };
+        var renderTask = page.render(renderContext);
+        renderTask.promise.then(function () {
+        console.log('Page rendered');
+        });
+    });
+}
+
+
+var load_pdf = (doc)=>{
+    var loadingTask = pdfjsLib.getDocument('demodoc.pdf');
+
+    loadingTask.promise.then(function(pdf) {
+    pdf_obj = pdf
+    console.log('PDF loaded');
+    
+    // Fetch the first page
+    render_pdf_page(pdf_obj, pdf_pg_no);
+   
+    }, function (reason) {
+    // PDF loading error
+    console.error(reason);
+    });
+
+}
+
+var inc_pg_no = ()=>{
+    pdf_pg_no=pdf_pg_no+1;
+    render_pdf_page(pdf_obj, pdf_pg_no);
+}
+var dec_pg_no = ()=>{
+    pdf_pg_no=pdf_pg_no-1;
+    render_pdf_page(pdf_obj, pdf_pg_no);
+}
 
